@@ -7,19 +7,45 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.internal.path.xml.NodeImpl;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 
 public class UserXMLTest {
+	
+	public static RequestSpecification reqSpec;
+	public static ResponseSpecification resSpec;
+	
+	@BeforeClass
+	public static void setup() {
+		RestAssured.baseURI = "http://restapi.wcaquino.me";
+		
+		RequestSpecBuilder requestSpecBuilder = new RequestSpecBuilder();
+		requestSpecBuilder.log(LogDetail.ALL);
+		reqSpec = requestSpecBuilder.build();
+		
+		ResponseSpecBuilder responseSpecBuilder = new ResponseSpecBuilder();
+		responseSpecBuilder.expectStatusCode(200);
+		resSpec = responseSpecBuilder.build();
+		
+		RestAssured.requestSpecification = reqSpec;
+		RestAssured.responseSpecification = resSpec;
+	}
 	
 	@Test
 	public void devoTrabalharComXML() {
 		given()
+			.log().all()
 		.when()
-			.get("http://restapi.wcaquino.me/usersXML/3")
+			.get("/usersXML/3")
 		.then()
-			.statusCode(200)
 			.rootPath("user")
 			.body("name", is("Ana Julia"))
 			.body("@id", is("3"))
@@ -41,9 +67,8 @@ public class UserXMLTest {
 	public void devoFazerPesquisasAvancadasComXML() {
 		given()
 		.when()
-			.get("http://restapi.wcaquino.me/usersXML")
+			.get("/usersXML")
 		.then()
-			.statusCode(200)
 			.rootPath("users.user")
 			.body("size()", is(3))
 			.body("findAll{it.age.toInteger() <= 25}.size()", is(2))
@@ -60,9 +85,8 @@ public class UserXMLTest {
 	public void devoFazerPesquisasAvancadasComXMLEJava() {
 		ArrayList<NodeImpl> nomes = given()
 		.when()
-			.get("http://restapi.wcaquino.me/usersXML")
+			.get("/usersXML")
 		.then()
-			.statusCode(200)
 			.extract().path("users.user.name.findAll{it.toString().contains('n')}");
 		
 		assertEquals(2, nomes.size());
@@ -74,9 +98,8 @@ public class UserXMLTest {
 	public void devoFazerPesquisasAvancadasComXPath() {
 		given()
 		.when()
-			.get("http://restapi.wcaquino.me/usersXML")
+			.get("/usersXML")
 		.then()
-			.statusCode(200)
 			.body(hasXPath("count(/users/user)", is("3")))
 			.body(hasXPath("/users/user[@id = '1']"))
 			.body(hasXPath("//user[@id = '2']"))
