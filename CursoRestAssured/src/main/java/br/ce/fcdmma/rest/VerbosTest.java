@@ -2,6 +2,10 @@ package br.ce.fcdmma.rest;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+
+import java.util.HashMap;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,6 +68,47 @@ public class VerbosTest {
 			.body("user.name", is("Pantufa"))
 			.body("user.age", is("5"))
 		;
+	}
+	
+	@Test
+	public void deveSalvarUsuarioViaXMLUsandoObjeto() {
+		User user = new User("Usuario XML", 45);
+		
+		given()
+			.log().all()
+			.contentType(ContentType.XML)
+			.body(user)
+		.when()
+			.post("/usersXML")
+		.then()
+			.log().all()
+			.statusCode(201)
+			.body("user.@id", is(notNullValue()))
+			.body("user.name", is("Usuario XML"))
+			.body("user.age", is("45"))
+		;
+	}
+	
+	@Test
+	public void deveDeserializarXMLAoSalvarUsuario() {
+		User user = new User("Usuario XML", 45);
+		
+		User usuarioInserido = given()
+			.log().all()
+			.contentType(ContentType.XML)
+			.body(user)
+		.when()
+			.post("/usersXML")
+		.then()
+			.log().all()
+			.statusCode(201)
+			.extract().body().as(User.class)
+		;
+		
+		assertThat(usuarioInserido.getId(), notNullValue());
+		assertThat(usuarioInserido.getName(), is("Usuario XML"));
+		assertThat(usuarioInserido.getAge(), is(45));
+		assertThat(usuarioInserido.getSalary(), nullValue());
 	}
 	
 	@Test
@@ -145,5 +190,66 @@ public class VerbosTest {
 			.statusCode(400)
 			.body("error", is("Registro inexistente"))
 		;
+	}
+	
+	@Test
+	public void deveSalvarUsuarioUsandoMap() {
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		map.put("name", "Usuário via MAP");
+		map.put("age", 21);
+		
+		given()
+			.log().all()
+			.contentType("application/json")
+			.body(map)
+		.when()
+			.post("/users")
+		.then()
+			.log().all()
+			.statusCode(201)
+			.body("id", is(notNullValue()))
+			.body("name", is("Usuário via MAP"))
+			.body("age", is(21))
+		;
+	}
+	
+	@Test
+	public void deveSalvarUsuarioUsandoObjeto() {
+		User user = new User("Usuário via objeto", 34);
+		
+		given()
+			.log().all()
+			.contentType("application/json")
+			.body(user)
+		.when()
+			.post("/users")
+		.then()
+			.log().all()
+			.statusCode(201)
+			.body("id", is(notNullValue()))
+			.body("name", is("Usuário via objeto"))
+			.body("age", is(34))
+		;
+	}
+	
+	@Test
+	public void deveDeserializarObjetoAoSalvarUsuario() {
+		User user = new User("Usuário deserializado", 34);
+		
+		User usuarioInserido = given()
+			.log().all()
+			.contentType("application/json")
+			.body(user)
+		.when()
+			.post("/users")
+		.then()
+			.log().all()
+			.statusCode(201)
+			.extract().body().as(User.class)
+		;
+		
+		assertThat(usuarioInserido.getId(), notNullValue());
+		assertEquals("Usuário deserializado", usuarioInserido.getName());
+		assertThat(usuarioInserido.getAge(), is(34));
 	}
 }
